@@ -39,7 +39,7 @@ Socket handling happens in consumers.py. Three methods are implemented so far:
 
 Currently, three request are sort of handle:
 - client_id (on connection)
-- user_priveleges (on connection)
+- user_privileges (on connection)
 - geppetto_version (on message)
 
 This is enought to load a basic geppetto canvas (geppetto.vm template).
