@@ -1,4 +1,4 @@
-from consumers import *
+from consumers import ws_connect, ws_receive, ws_disconnect
 from channels import route
 
 server_routing = [
