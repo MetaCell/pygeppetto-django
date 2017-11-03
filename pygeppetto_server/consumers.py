@@ -10,17 +10,17 @@ def ws_connect(message):
     message.reply_channel.send({
             'text': json.dumps({
                 'type': 'client_id',
-                'data': {
+                'data': json.dumps({
                     'clientID': 'Connection1'
-                    }
+                    })
                 })
             })
     # 2 -> Check user privileges
     message.reply_channel.send({
             'text': json.dumps({
                 'type': 'user_privileges',
-                'data': {
-                    "user_privileges": {
+                'data': json.dumps({
+                    "user_privileges": json.dumps({
                         "userName": "Python User",
                         "loggedIn": True,
                         "hasPersistence": False,
@@ -31,8 +31,8 @@ def ws_connect(message):
                             "RUN_EXPERIMENT",
                             "WRITE_PROJECT"
                             ]
-                        }
-                    }
+                        })
+                    })
                 })
             })
 
@@ -46,9 +46,9 @@ def ws_receive(message):
             "text": json.dumps({
                 "requestID": payload['requestID'],
                 "type": "geppetto_version",
-                "data": {
+                "data": json.dumps({
                     "geppetto_version": "0.3.7"
-                    }
+                    })
                 })
             })
 
