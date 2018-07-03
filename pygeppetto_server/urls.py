@@ -1,7 +1,7 @@
 from django.conf.urls import url
 from django.views.generic import RedirectView
 
-from . import views
+from pygeppetto_server import views
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
