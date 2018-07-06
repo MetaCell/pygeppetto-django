@@ -1,28 +1,25 @@
 from __future__ import print_function
-
 import json
 
+from channels.generic.websocket import WebsocketConsumer
 
-def ws_connect(message):
-    print('Socket opened')
-    # Accept the connection request
-    message.reply_channel.send({'accept': True})
 
-    # 1 -> Send the connection
-    message.reply_channel.send({
-            'text': json.dumps({
+class GeppettoConsumer(WebsocketConsumer):
+
+    CLIENT_ID = {
+            'text': {
                 'type': 'client_id',
-                'data': json.dumps({
+                'data': {
                     'clientID': 'Connection1'
-                    })
-                })
-            })
-    # 2 -> Check user privileges
-    message.reply_channel.send({
-            'text': json.dumps({
+                    }
+                }
+            }
+
+    PRIVILEGES = {
+            'text': {
                 'type': 'user_privileges',
-                'data': json.dumps({
-                    "user_privileges": json.dumps({
+                'data': {
+                    "user_privileges": {
                         "userName": "Python User",
                         "loggedIn": True,
                         "hasPersistence": False,
@@ -33,27 +30,29 @@ def ws_connect(message):
                             "RUN_EXPERIMENT",
                             "WRITE_PROJECT"
                             ]
-                        })
-                    })
-                })
-            })
+                        }
+                    }
+                }
+            }
 
+    def connect(self):
+        self.accept()
+        self.send(json.dumps(self.CLIENT_ID))
+        self.send(json.dumps(self.PRIVILEGES))
 
-def ws_receive(message):
-    payload = json.loads(message['text'])
-    if (payload['type'] == 'geppetto_version'):
-        print("Geppetto Version 0.3.7")
-        # Where do we get the geppetto version from?
-        message.reply_channel.send({
-            "text": json.dumps({
-                "requestID": payload['requestID'],
-                "type": "geppetto_version",
-                "data": json.dumps({
-                    "geppetto_version": "0.3.7"
-                    })
-                })
-            })
+    def receive(self, text_data, bytes_data=None):
+        payload = json.loads(text_data)
 
+        if (payload['type'] == 'geppetto_version'):
+            self.send(json.dumps({
+                "text": {
+                    "requestID": payload['requestID'],
+                    "type": "geppetto_version",
+                    "data": {
+                        "geppetto_version": "0.3.7"
+                        }
+                    }
+                }))
 
-def ws_disconnect(message):
-    print("Socket closed")
+    def disconnect(self, close_code):
+        print("SOCKET CLOSED")

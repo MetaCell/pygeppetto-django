@@ -33,9 +33,7 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
     install_requires=[
-        'channels==1.1.8',
-        'asgi-redis==1.4.3',
-        'Django==1.9',
-        'djangorestframework==3.7.1'
+        'channels==2.1.2',
+        'Django==1.11.7'
     ]
 )
