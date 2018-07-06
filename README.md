@@ -32,10 +32,10 @@ pip install -e .
 
 **Socket communication**
 
-Socket handling happens in consumers.py. Three methods are implemented so far:
-- ws_connect
-- ws_receive
-- ws_disconnect
+Socket handling happens in consumers.py witihin GeppettoConsumer. Three methods are implemented so far:
+- connect
+- receive
+- disconnect
 
 Currently, three request are sort of handle:
 - client_id (on connection)
@@ -44,8 +44,7 @@ Currently, three request are sort of handle:
 
 This is enought to load a basic geppetto canvas (geppetto.vm template).
 
-Mapping (Controller) between url and python method is defined in routing.py. This file will be referenced from the main application. See https://github.com/MetaCell/pygeppetto-django/readme.
-
+Mapping (Controller) between url and python method is defined in routing.py. You have to import `application` variable into main application and define GEPPETTO_WEBSOCKET_URL in setting in settings. See https://github.com/MetaCell/pygeppetto-django/readme.
 
 **Load main view**
 
