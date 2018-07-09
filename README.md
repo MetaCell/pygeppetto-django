@@ -32,7 +32,7 @@ pip install -e .
 
 **Socket communication**
 
-Socket handling happens in consumers.py witihin GeppettoConsumer. Three methods are implemented so far:
+Socket handling happens in consumers.py within GeppettoConsumer. Three methods are implemented so far:
 - connect
 - receive
 - disconnect
