@@ -1,0 +1,17 @@
+{ "activeExperimentId" : 1,
+  "experiments" : [ { "aspectConfigurations" : [  ],
+    "description" : "",
+    "id" : 1,
+    "lastModified" : "",
+    "name" : "",
+    "status" : "COMPLETED"
+  } ],
+  "geppettoModel" : {
+    "id" : 9,
+    "type" : "GEPPETTO_PROJECT",
+    "url" : "{}"
+  },
+  "id" : 8,
+  "name" : ""
+}
+
