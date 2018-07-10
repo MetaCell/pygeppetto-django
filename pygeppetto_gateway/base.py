@@ -4,6 +4,8 @@ from django.conf import settings
 from websocket import create_connection
 import requests
 
+
+
 import logging
 LOGGER = logging.getLogger(__name__)
 
@@ -13,16 +15,32 @@ class GeppettoServletManager():
     """ Base class for communication with Java Geppetto server """
 
     DEFAULT_HOST = 'ws://localhost:8080'
+    cookies = None
 
     def __init__(self):
 
-        if hasattr(settings, 'GEPPETTO_SERVLET_HOST'):
-            self.host = settings.GEPPETTO_SERVLET_HOST
+        if hasattr(settings, 'GEPPETTO_SERVLET_URL'):
+            self.host = settings.GEPPETTO_SERVLET_URL
         else:
             self.host = self.DEFAULT_HOST
 
+        self._say_hello_geppetto()
+
+    def _say_hello_geppetto(self):
+        http_response = requests.get(settings.GEPPETTO_BASE_URL)
+
+        self.cookies = ";".join(["{}={}".format(x, y) for x, y in
+            http_response.cookies.iteritems()])
+
     def _send(self, payload):
-        ws = create_connection(self.host)
+
+        if self.cookies is None:
+            raise Exception("You forgot to say hello to geppetto"
+                    "(self._say_hello_geppetto())")
+
+        ws = create_connection(self.host,
+                cookie=self.cookies)
+
         ws.send(payload)
         result = ws.recv()
         ws.close()
@@ -35,7 +53,12 @@ class GeppettoServletManager():
             'data': data
         })
 
-        return json.loads(self._send(payload))
+        result = self._send(payload)
+
+        try:
+            return json.loads(result)
+        except:
+            return result
 
 
 class GeppettoProjectBuilder():
