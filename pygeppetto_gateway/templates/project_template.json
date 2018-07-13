@@ -1,17 +1,29 @@
-{ "activeExperimentId" : 1,
-  "experiments" : [ { "aspectConfigurations" : [  ],
-    "description" : "",
+{
+  "id" : 1,
+  "name" : "{project_name}",
+  "activeExperimentId" : 1,
+  "experiments" : [{
     "id" : 1,
-    "lastModified" : "",
-    "name" : "",
-    "status" : "COMPLETED"
-  } ],
-  "geppettoModel" : {
-    "id" : 9,
-    "type" : "GEPPETTO_PROJECT",
-    "url" : "{}"
-  },
-  "id" : 8,
-  "name" : ""
+    "name" : "{project_name}",
+    "status" : "DESIGN",
+    "creationDate" : "{date}",
+    "lastModified" : "{date}",
+    "aspectConfigurations" : [
+      {
+        "id" : 1,
+        "instance" : "",
+        "simulatorConfiguration" : {
+          "id" : 1,
+          "simulatorId" : "geppetto_scidash",
+          "timestep" : 0.000025,
+          "length" : 0.3
+        }
+      }
+    ]
+  }],
+  "geppettoModel": {
+    "id" : 1,
+    "url" : "{url}",
+    "type" : "GEPPETTO_PROJECT"
+  }
 }
-

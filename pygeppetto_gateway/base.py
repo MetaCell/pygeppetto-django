@@ -1,12 +1,12 @@
 import json
+import os
+import logging
 
 from django.conf import settings
 from websocket import create_connection
 import requests
 
 
-
-import logging
 LOGGER = logging.getLogger(__name__)
 
 
@@ -57,23 +57,80 @@ class GeppettoServletManager():
 
         try:
             return json.loads(result)
-        except:
+        except Exception:
             return result
 
 
 class GeppettoProjectBuilder():
 
-    DEFAULT_FILE_PATH = '/tmp/model.nml'
+    def __init__(self, nml_url, **options):
+        """__init__
 
-    def __init__(self, nml_url):
+        :param nml_url:
+        :param **options:
+            built_xml_location: location where xmi model file will be saved
+                after replacing all values
+            built_project_location: location where project file will be saved
+                after replacing all values
+            downloaded_nml_location: location where nml file will be saved
+                after downloading
+        """
+
+        current_dir = os.path.dirname(os.path.realpath(__file__))
 
         self._nml_url = nml_url
+        self._nml_file = None
 
-        self.load_file()
+        xmi_template_path = os.path.join(current_dir,
+                'templates/model_template.xmi')
+        project_template_path = os.path.join(current_dir,
+                'templates/project_template.json')
 
-    def load_file(self):
+        with open(xmi_template_path, 'r') as t:
+            self.xmi_template = t.read()
 
-        _file_content = requests.get(self._nml_url).text
+        with open(project_template_path, 'r') as t:
+            self.project_template = t.read()
 
-        with open(self.DEFAULT_FILE_PATH) as f:
-            f.write(_file_content)
+        self._model_name = options.get('model_name', 'defaultModel')
+
+        self._built_xmi_location = options.get('built_xmi_location',
+                '/tmp/model.xmi')
+
+        self._built_project_location = options.get('built_project_location',
+                '/tmp/project.json')
+
+        self._downloaded_nml_location = options.get('downloaded_nml_location',
+                '/tmp/nml_model.nml')
+
+
+        def donwload_nml(self):
+            """
+            Downloads NML file from `self._nml_url`,
+                saves it to `self._downloaded_nml_location`
+
+            :returns: path of nml file (str)
+            """
+
+            file_content = requests.get(self._nml_url).text
+
+            with open(self._downloaded_nml_location, 'w') as nml:
+                nml.write(file_content)
+
+            return self._downloaded_nml_location
+
+        def build_xmi(self):
+            """
+            Builds xmi Geppetto model file from downloaded nml, saves to
+            `self._built_xmi_location`
+
+            :returns: path to xmi file (str)
+            """
+
+            with open(self._built_xmi_location, 'w') as xt:
+                xt.write(self.xmi_template.format(
+                    name=self._model_name,
+                    url=self._downloaded_nml_location
+                    ))
+
+            return self._built_xmi_location

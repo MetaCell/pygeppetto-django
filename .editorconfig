@@ -39,3 +39,7 @@ indent_style = tab
 # Batch files use tabs for indentation
 [*.bat]
 indent_style = tab
+
+[*.xmi]
+indent_size = 2
+indent_style = space
