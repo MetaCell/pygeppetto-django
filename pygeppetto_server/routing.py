@@ -1,10 +1,13 @@
 from __future__ import absolute_import
 
-from pygeppetto_server.consumers import ws_connect, ws_receive, ws_disconnect
-from channels import route
+from django.conf.urls import url
+from django.conf import settings
+from channels.routing import ProtocolTypeRouter, URLRouter
 
-server_routing = [
-    route('websocket.connect', ws_connect),
-    route('websocket.receive', ws_receive),
-    route('websocket.disconnect', ws_disconnect),
-]
+from pygeppetto_server.consumers import GeppettoConsumer
+
+application = ProtocolTypeRouter({
+    "websocket": URLRouter([
+            url(r"^{}$".format(settings.GEPPETTO_SOCKET_URL), GeppettoConsumer)
+        ])
+})
