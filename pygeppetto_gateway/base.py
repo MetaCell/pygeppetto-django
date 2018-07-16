@@ -1,6 +1,7 @@
 import json
 import os
 import logging
+from string import Template
 
 from django.conf import settings
 from django.utils import timezone
@@ -92,7 +93,6 @@ class GeppettoProjectBuilder():
                 after downloading
             project_name: obviously a project name
         """
-
         current_dir = os.path.dirname(os.path.realpath(__file__))
 
         self._nml_url = nml_url
@@ -168,10 +168,11 @@ class GeppettoProjectBuilder():
         self.build_xmi()
 
         with open(self._built_project_location, 'w') as xt:
-            xt.write(self.project_template.format(
-                project_name=self._project_name,
-                date=timezone.now(),
-                url=self._built_xmi_location
+            xt.write(Template(self.project_template).substitute(
+                    project_name=self._project_name,
+                    date=timezone.now(),
+                    url=self._built_xmi_location
                 ))
+
 
         return self._built_project_location
