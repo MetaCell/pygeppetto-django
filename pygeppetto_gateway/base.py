@@ -17,6 +17,7 @@ class GeppettoServletManager():
     """ Base class for communication with Java Geppetto server """
 
     DEFAULT_HOST = 'ws://localhost:8080'
+
     cookies = None
 
     def __init__(self) -> None:
@@ -69,6 +70,7 @@ class GeppettoServletManager():
         payload = json.dumps({
             'type': _type,
             'data': data
+
         })
 
         result = self._send(payload)

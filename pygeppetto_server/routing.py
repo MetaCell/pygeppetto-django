@@ -7,7 +7,7 @@ from pygeppetto_server.consumers import GeppettoConsumer, \
 
 application = ProtocolTypeRouter({
     "websocket": URLRouter([
-            url(r"^{}$".format(settings.GEPPETTO_SOCKET_URL),
+            url(r"^{}$".format(settings.PYGEPPETTO_SOCKET_URL),
                 GeppettoConsumer),
             url(r"^gateway$", GeppettoGatewayConsumer)
                             ])
