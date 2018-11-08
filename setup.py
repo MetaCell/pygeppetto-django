@@ -34,6 +34,8 @@ setup(
     ],
     install_requires=[
         'channels==2.1.2',
-        'Django==1.11.7'
+        'Django==1.11.7',
+        'websocket-client==0.48.0',
+        'requests==2.19.1'
     ]
 )
