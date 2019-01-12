@@ -15,7 +15,7 @@
                "instance":"",
                "simulatorConfiguration":{
                   "id":1,
-                  "simulatorId":"geppetto_scidash",
+                  "simulatorId":"scidashSimulator",
                   "timestep":0.000025,
                   "length":0.3
                }
