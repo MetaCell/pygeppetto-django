@@ -3,6 +3,8 @@
 class Servlet:
 
     LOAD_PROJECT_FROM_URL = 'load_project_from_url'
+    CLIENT_ID = 'client_id'
+    PING = 'ping'
 
 # GATEWAY MESSAGES
 
