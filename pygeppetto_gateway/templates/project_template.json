@@ -7,8 +7,6 @@
          "id":1,
          "name":"${project_name}",
          "status":"DESIGN",
-         "creationDate":"${date}",
-         "lastModified":"${date}",
          "aspectConfigurations":[
             {
                "id":1,

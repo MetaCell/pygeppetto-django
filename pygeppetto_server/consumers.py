@@ -38,13 +38,13 @@ class GeppettoGatewayConsumer(WebsocketConsumer):
 
         result = getattr(self, action_type)(**payload.get('data', {}))
 
-        self.send(text_data=json.dumps(result))
+        self.send(json.dumps(result))
 
     def disconnect(self, close_code):
-        self.send({
+        self.send(json.dumps({
             'type': messages.Outcome.CONNECTION_CLOSED,
             'data': 'Bye, stranger!'
-            })
+            }))
 
     # ACTIONS
 

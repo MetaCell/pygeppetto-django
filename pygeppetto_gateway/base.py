@@ -1,12 +1,14 @@
 import json
-import os
 import logging
+import ntpath
+import os
 from string import Template
 
-from django.conf import settings
-from django.utils import timezone
-from websocket import create_connection
 import requests
+from django.conf import settings
+from websocket import create_connection
+
+import pygeppetto_server.messages as messages
 
 
 LOGGER = logging.getLogger(__name__)
@@ -19,6 +21,8 @@ class GeppettoServletManager():
     DEFAULT_HOST = 'ws://localhost:8080'
 
     cookies = None
+    client_id = None
+    request_number = 0
 
     def __init__(self) -> None:
 
@@ -60,18 +64,44 @@ class GeppettoServletManager():
         ws = create_connection(self.host,
                 cookie=self.cookies)
 
-        ws.send(payload)
-        result = ws.recv()
+        result = None
+        data = None
+
+        for i in range(3):
+            result = ws.recv()
+
+            if result == messages.Servlet.PING:
+                continue
+
+            result = json.loads(result)
+            if result.get('type', None) == messages.Servlet.CLIENT_ID:
+                data = json.loads(result.get('data'))
+                self.client_id = data.get('clientID', None)
+
+        self.request_number += 1
+
+        payload.update({
+            'requestID': "{}-{}".format(self.client_id, self.request_number)
+            })
+
+        ws.send(json.dumps(payload))
+
+        result = []
+
+        for i in range(2):
+            result.append(ws.recv())
+
         ws.close()
 
         return result
 
     def handle(self, _type: str, data: dict) -> str:
-        payload = json.dumps({
+        payload = {
+            'requestID': None,
             'type': _type,
             'data': data
 
-        })
+        }
 
         result = self._send(payload)
 
@@ -98,7 +128,6 @@ class GeppettoProjectBuilder():
         current_dir = os.path.dirname(os.path.realpath(__file__))
 
         self._nml_url = nml_url
-        self._nml_file = None
 
         xmi_template_path = os.path.join(current_dir,
                 'templates/model_template.xmi')
@@ -124,6 +153,10 @@ class GeppettoProjectBuilder():
 
         self._project_name = options.get('project_name',
                 'defaultProject')
+
+    def _get_file_name(self, path):
+        head, tail = ntpath.split(path)
+        return tail or ntpath.basename(head)
 
     def donwload_nml(self) -> str:
         """donwload_nml
@@ -152,13 +185,20 @@ class GeppettoProjectBuilder():
         :rtype: str
         """
 
+        url_to_nml = os.path.join(settings.PYGEPPETTO_BUILDER_PROJECT_BASE_URL,
+                    self._get_file_name(self._downloaded_nml_location))
+
+        url_to_xmi = os.path.join(settings.PYGEPPETTO_BUILDER_PROJECT_BASE_URL,
+                    self._get_file_name(self._built_xmi_location))
+
+
         with open(self._built_xmi_location, 'w') as xt:
             xt.write(self.xmi_template.format(
                 name=self._model_name,
-                url=self._downloaded_nml_location
+                url=url_to_nml
                 ))
 
-        return self._built_xmi_location
+        return url_to_xmi
 
     def build_project(self) -> str:
         """build_project
@@ -167,14 +207,15 @@ class GeppettoProjectBuilder():
         """
 
         self.donwload_nml()
-        self.build_xmi()
+        url_to_xmi = self.build_xmi()
 
         with open(self._built_project_location, 'w') as xt:
             xt.write(Template(self.project_template).substitute(
                     project_name=self._project_name,
-                    date=timezone.now(),
-                    url=self._built_xmi_location
+                    url=url_to_xmi
                 ))
 
+        project_url = os.path.join(settings.PYGEPPETTO_BUILDER_PROJECT_BASE_URL,
+                self._get_file_name(self._built_project_location))
 
-        return self._built_project_location
+        return project_url
