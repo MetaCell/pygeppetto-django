@@ -48,6 +48,28 @@ class GeppettoGatewayConsumer(WebsocketConsumer):
 
     # ACTIONS
 
+    def scidash_run_experiment(self, experiment_id) -> None:
+        servlet_manager = GeppettoServletManager()
+
+        servlet_manager.handle(
+                _type=messages.Servlet.RUN_EXPERIMENT,
+                data=experiment_id
+                )
+
+        #FIXME: should not repeat the same part from scidash_load_model
+        while not response_finished:
+            result = servlet_manager.read()
+
+            if result is not '':
+                response_list.append(json.loads(result))
+            else:
+                response_finished = True
+
+        return {
+                'type': messages.Outcome.GEPPETTO_RESPONSE_RECEIVED,
+                'data': response_list
+                }
+
     def scidash_load_model(self, url: str) -> None:
         """scidash_load_model
 
@@ -75,14 +97,25 @@ class GeppettoGatewayConsumer(WebsocketConsumer):
         path_to_project = project_builder.build_project()
         servlet_manager = GeppettoServletManager()
 
-        result = servlet_manager.handle(
+        servlet_manager.handle(
                 _type=messages.Servlet.LOAD_PROJECT_FROM_URL,
                 data=path_to_project
                 )
 
+        response_finished = False
+        response_list = []
+
+        while not response_finished:
+            result = servlet_manager.read()
+
+            if result is not '':
+                response_list.append(json.loads(result))
+            else:
+                response_finished = True
+
         return {
                 'type': messages.Outcome.GEPPETTO_RESPONSE_RECEIVED,
-                'data': result
+                'data': response_list
                 }
 
 class GeppettoConsumer(WebsocketConsumer):

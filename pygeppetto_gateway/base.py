@@ -66,16 +66,15 @@ class GeppettoServletManager():
         self.ws.send(payload)
 
     def handle(self, _type: str, data: dict, requestID="pg-request"):
-        payload = {
+        payload = json.dumps({
             'requestID': requestID,
             'type': _type,
             'data': data
-
-        }
+        })
 
         self._send(payload)
 
-    def read() -> str:
+    def read(self) -> str:
         result = self.ws.recv()
 
         return result
@@ -124,12 +123,18 @@ class GeppettoProjectBuilder():
         self._downloaded_nml_location = options.get('downloaded_nml_location',
                 '/tmp/nml_model.nml')
 
+        self._base_project_files_host = options.get('base_project_files_host',
+                                'http://localhost:8000/static/projects/')
+
         self._project_name = options.get('project_name',
                 'defaultProject')
 
     def _get_file_name(self, path):
         head, tail = ntpath.split(path)
         return tail or ntpath.basename(head)
+
+    def build_url(self, path):
+        return f"{self._base_project_files_host}{self._get_file_name(path)}"
 
     def donwload_nml(self) -> str:
         """donwload_nml
@@ -161,10 +166,10 @@ class GeppettoProjectBuilder():
         with open(self._built_xmi_location, 'w') as xt:
             xt.write(self.xmi_template.format(
                 name=self._model_name,
-                url=self._downloaded_nml_location
+                url=self.build_url(self._downloaded_nml_location)
                 ))
 
-        return self._built_xmi_location
+        return self.build_url(self._built_xmi_location)
 
     def build_project(self) -> str:
         """build_project
@@ -178,7 +183,7 @@ class GeppettoProjectBuilder():
         with open(self._built_project_location, 'w') as project:
             project.write(Template(self.project_template).substitute(
                     project_name=self._project_name,
-                    url=self._built_xmi_location
+                    url=self.build_url(self._built_xmi_location)
                 ))
 
-        return self._built_project_location
+        return self.build_url(self._built_project_location)

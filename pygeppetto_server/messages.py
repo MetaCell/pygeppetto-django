@@ -3,6 +3,7 @@
 class Servlet:
 
     LOAD_PROJECT_FROM_URL = 'load_project_from_url'
+    RUN_EXPERIMENT = 'run_experiment'
     CLIENT_ID = 'client_id'
     PING = 'ping'
 
