@@ -21,8 +21,7 @@ class GeppettoServletManager():
     DEFAULT_HOST = 'ws://localhost:8080'
 
     cookies = None
-    client_id = None
-    request_number = 0
+    ws = None
 
     def __init__(self) -> None:
 
@@ -61,49 +60,23 @@ class GeppettoServletManager():
             raise Exception("You forgot to say hello to geppetto"
                     "(self._say_hello_geppetto())")
 
-        ws = create_connection(self.host,
+        self.ws = create_connection(self.host,
                 cookie=self.cookies)
 
-        result = None
-        data = None
+        self.ws.send(payload)
 
-        for i in range(3):
-            result = ws.recv()
-
-            if result == messages.Servlet.PING:
-                continue
-
-            result = json.loads(result)
-            if result.get('type', None) == messages.Servlet.CLIENT_ID:
-                data = json.loads(result.get('data'))
-                self.client_id = data.get('clientID', None)
-
-        self.request_number += 1
-
-        payload.update({
-            'requestID': "{}-{}".format(self.client_id, self.request_number)
-            })
-
-        ws.send(json.dumps(payload))
-
-        result = []
-
-        for i in range(2):
-            result.append(ws.recv())
-
-        ws.close()
-
-        return result
-
-    def handle(self, _type: str, data: dict) -> str:
+    def handle(self, _type: str, data: dict, requestID="pg-request"):
         payload = {
-            'requestID': None,
+            'requestID': requestID,
             'type': _type,
             'data': data
 
         }
 
-        result = self._send(payload)
+        self._send(payload)
+
+    def read() -> str:
+        result = self.ws.recv()
 
         return result
 
@@ -185,20 +158,13 @@ class GeppettoProjectBuilder():
         :rtype: str
         """
 
-        url_to_nml = os.path.join(settings.PYGEPPETTO_BUILDER_PROJECT_BASE_URL,
-                    self._get_file_name(self._downloaded_nml_location))
-
-        url_to_xmi = os.path.join(settings.PYGEPPETTO_BUILDER_PROJECT_BASE_URL,
-                    self._get_file_name(self._built_xmi_location))
-
-
         with open(self._built_xmi_location, 'w') as xt:
             xt.write(self.xmi_template.format(
                 name=self._model_name,
-                url=url_to_nml
+                url=self._downloaded_nml_location
                 ))
 
-        return url_to_xmi
+        return self._built_xmi_location
 
     def build_project(self) -> str:
         """build_project
@@ -207,15 +173,12 @@ class GeppettoProjectBuilder():
         """
 
         self.donwload_nml()
-        url_to_xmi = self.build_xmi()
+        self.build_xmi()
 
-        with open(self._built_project_location, 'w') as xt:
-            xt.write(Template(self.project_template).substitute(
+        with open(self._built_project_location, 'w') as project:
+            project.write(Template(self.project_template).substitute(
                     project_name=self._project_name,
-                    url=url_to_xmi
+                    url=self._built_xmi_location
                 ))
 
-        project_url = os.path.join(settings.PYGEPPETTO_BUILDER_PROJECT_BASE_URL,
-                self._get_file_name(self._built_project_location))
-
-        return project_url
+        return self._built_project_location
