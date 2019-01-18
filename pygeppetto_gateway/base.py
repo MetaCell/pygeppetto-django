@@ -8,14 +8,10 @@ import requests
 from django.conf import settings
 from websocket import create_connection
 
-import pygeppetto_server.messages as messages
-
-
 LOGGER = logging.getLogger(__name__)
 
 
 class GeppettoServletManager():
-
     """ Base class for communication with Java Geppetto server """
 
     DEFAULT_HOST = 'ws://localhost:8080'
@@ -43,8 +39,12 @@ class GeppettoServletManager():
 
         http_response = requests.get(settings.GEPPETTO_BASE_URL)
 
-        self.cookies = ";".join(["{}={}".format(x, y) for x, y in
-            http_response.cookies.iteritems()])
+        self.cookies = ";".join(
+            [
+                "{}={}".format(x, y)
+                for x, y in http_response.cookies.iteritems()
+            ]
+        )
 
     def _send(self, payload: dict) -> str:
         """_send
@@ -57,20 +57,23 @@ class GeppettoServletManager():
         """
 
         if self.cookies is None:
-            raise Exception("You forgot to say hello to geppetto"
-                    "(self._say_hello_geppetto())")
+            raise Exception(
+                "You forgot to say hello to geppetto"
+                "(self._say_hello_geppetto())"
+            )
 
-        self.ws = create_connection(self.host,
-                cookie=self.cookies)
+        self.ws = create_connection(self.host, cookie=self.cookies)
 
         self.ws.send(payload)
 
     def handle(self, _type: str, data: dict, requestID="pg-request"):
-        payload = json.dumps({
-            'requestID': requestID,
-            'type': _type,
-            'data': data
-        })
+        payload = json.dumps(
+            {
+                'requestID': requestID,
+                'type': _type,
+                'data': data
+            }
+        )
 
         self._send(payload)
 
@@ -81,7 +84,6 @@ class GeppettoServletManager():
 
 
 class GeppettoProjectBuilder():
-
     def __init__(self, nml_url: str, **options: dict) -> None:
         """__init__
 
@@ -101,10 +103,12 @@ class GeppettoProjectBuilder():
 
         self._nml_url = nml_url
 
-        xmi_template_path = os.path.join(current_dir,
-                'templates/model_template.xmi')
-        project_template_path = os.path.join(current_dir,
-                'templates/project_template.json')
+        xmi_template_path = os.path.join(
+            current_dir, 'templates/model_template.xmi'
+        )
+        project_template_path = os.path.join(
+            current_dir, 'templates/project_template.json'
+        )
 
         with open(xmi_template_path, 'r') as t:
             self.xmi_template = t.read()
@@ -114,20 +118,23 @@ class GeppettoProjectBuilder():
 
         self._model_name = options.get('model_name', 'defaultModel')
 
-        self._built_xmi_location = options.get('built_xmi_location',
-                '/tmp/model.xmi')
+        self._built_xmi_location = options.get(
+            'built_xmi_location', '/tmp/model.xmi'
+        )
 
-        self._built_project_location = options.get('built_project_location',
-                '/tmp/project.json')
+        self._built_project_location = options.get(
+            'built_project_location', '/tmp/project.json'
+        )
 
-        self._downloaded_nml_location = options.get('downloaded_nml_location',
-                '/tmp/nml_model.nml')
+        self._downloaded_nml_location = options.get(
+            'downloaded_nml_location', '/tmp/nml_model.nml'
+        )
 
-        self._base_project_files_host = options.get('base_project_files_host',
-                                'http://localhost:8000/static/projects/')
+        self._base_project_files_host = options.get(
+            'base_project_files_host', 'http://localhost:8000/static/projects/'
+        )
 
-        self._project_name = options.get('project_name',
-                'defaultProject')
+        self._project_name = options.get('project_name', 'defaultProject')
 
     def _get_file_name(self, path):
         head, tail = ntpath.split(path)
@@ -164,10 +171,12 @@ class GeppettoProjectBuilder():
         """
 
         with open(self._built_xmi_location, 'w') as xt:
-            xt.write(self.xmi_template.format(
-                name=self._model_name,
-                url=self.build_url(self._downloaded_nml_location)
-                ))
+            xt.write(
+                self.xmi_template.format(
+                    name=self._model_name,
+                    url=self.build_url(self._downloaded_nml_location)
+                )
+            )
 
         return self.build_url(self._built_xmi_location)
 
@@ -181,9 +190,11 @@ class GeppettoProjectBuilder():
         self.build_xmi()
 
         with open(self._built_project_location, 'w') as project:
-            project.write(Template(self.project_template).substitute(
+            project.write(
+                Template(self.project_template).substitute(
                     project_name=self._project_name,
                     url=self.build_url(self._built_xmi_location)
-                ))
+                )
+            )
 
         return self.build_url(self._built_project_location)

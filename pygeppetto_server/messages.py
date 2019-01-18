@@ -1,5 +1,6 @@
 # GEPPETTO SERVLET MESSAGES
 
+
 class Servlet:
 
     LOAD_PROJECT_FROM_URL = 'load_project_from_url'
@@ -7,7 +8,9 @@ class Servlet:
     CLIENT_ID = 'client_id'
     PING = 'ping'
 
+
 # GATEWAY MESSAGES
+
 
 class Income:
 
@@ -29,10 +32,7 @@ class PygeppettoDjangoError():
     message = None
 
     def __init__(self):
-        return {
-                'code': self.code,
-                'message': self.message
-                }
+        return {'code': self.code, 'message': self.message}
 
 
 class UknownActionError(PygeppettoDjangoError):
