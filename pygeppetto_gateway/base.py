@@ -141,7 +141,7 @@ class GeppettoProjectBuilder():
         return tail or ntpath.basename(head)
 
     def build_url(self, path):
-        return f"{self._base_project_files_host}{self._get_file_name(path)}"
+        return "{self._base_project_files_host}{self._get_file_name(path)}"
 
     def donwload_nml(self) -> str:
         """donwload_nml
