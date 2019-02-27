@@ -119,15 +119,15 @@ class GeppettoProjectBuilder():
         self._model_name = options.get('model_name', 'defaultModel')
 
         self._built_xmi_location = options.get(
-            'built_xmi_location', '/tmp/model.xmi'
+            'xmi_location', '/tmp/model.xmi'
         )
 
         self._built_project_location = options.get(
-            'built_project_location', '/tmp/project.json'
+            'project_location', '/tmp/project.json'
         )
 
         self._downloaded_nml_location = options.get(
-            'downloaded_nml_location', '/tmp/nml_model.nml'
+            'nml_location', '/tmp/nml_model.nml'
         )
 
         self._base_project_files_host = options.get(
