@@ -130,8 +130,9 @@ class GeppettoProjectBuilder():
             'nml_location', '/tmp/nml_model.nml'
         )
 
-        self._base_project_files_host = options.get(
-            'base_project_files_host', 'http://localhost:8000/static/projects/'
+        self._base_project_files_host = getattr(
+            settings, 'BASE_PROJECT_FILES_HOST',
+            'http://localhost:8000/static/projects/'
         )
 
         self._project_name = options.get('project_name', 'defaultProject')
