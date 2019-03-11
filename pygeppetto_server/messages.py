@@ -14,7 +14,7 @@ class Servlet:
 
 class Income:
 
-    SCIDASH_LOAD_MODEL = 'scidash_load_model'
+    LOAD_MODEL = 'load_model'
 
 
 class Outcome:

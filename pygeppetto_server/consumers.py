@@ -59,7 +59,7 @@ class GeppettoGatewayConsumer(WebsocketConsumer):
 
     # ACTIONS
 
-    def scidash_run_experiment(self, experiment_id) -> None:
+    def run_experiment(self, experiment_id) -> None:
         servlet_manager = GeppettoServletManager()
 
         servlet_manager.handle(
@@ -69,11 +69,11 @@ class GeppettoGatewayConsumer(WebsocketConsumer):
         response_finished = False
         response_list = []
 
-        # FIXME: should not repeat the same part from scidash_load_model
+        # FIXME: should not repeat the same part from load_model
         while not response_finished:
             result = servlet_manager.read()
 
-            if result is not '':
+            if result != '':
                 response_list.append(json.loads(result))
             else:
                 response_finished = True
@@ -83,8 +83,8 @@ class GeppettoGatewayConsumer(WebsocketConsumer):
             'data': response_list
         }
 
-    def scidash_load_model(self, url: str) -> None:
-        """scidash_load_model
+    def load_model(self, url: str) -> None:
+        """load_model
 
         Action for loading model to Geppetto
 
@@ -118,7 +118,7 @@ class GeppettoGatewayConsumer(WebsocketConsumer):
         while not response_finished:
             result = servlet_manager.read()
 
-            if result is not '':
+            if result != '':
                 response_list.append(json.loads(result))
             else:
                 response_finished = True
