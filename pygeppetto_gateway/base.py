@@ -91,11 +91,11 @@ class GeppettoProjectBuilder():
 
         :param **options: not required
 
-            built_xml_location: location where xmi model file will be saved
+            xmi_location: location where xmi model file will be saved
                 after replacing all values
-            built_project_location: location where project file will be saved
+            project_location: location where project file will be saved
                 after replacing all values
-            downloaded_nml_location: location where nml file will be saved
+            nml_location: location where nml file will be saved
                 after downloading
             project_name: obviously a project name
         """

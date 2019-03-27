@@ -133,9 +133,7 @@ class GeppettoConsumer(WebsocketConsumer):
 
     CLIENT_ID = {
         'type': 'client_id',
-        'data': json.dumps({
-            'clientID': 'Connection1'
-        })
+        'data': json.dumps({'clientID': 'Connection1'})
     }
 
     PRIVILEGES = {
@@ -171,9 +169,7 @@ class GeppettoConsumer(WebsocketConsumer):
                     {
                         "requestID": payload['requestID'],
                         "type": "geppetto_version",
-                        "data": json.dumps({
-                            "geppetto_version": "0.3.7"
-                        })
+                        "data": json.dumps({"geppetto_version": "0.3.7"})
                     }
                 )
             )
