@@ -9,6 +9,12 @@ class Servlet:
     PING = 'ping'
 
 
+class ServletResponse:
+
+    PROJECT_LOADED = 'project_loaded'
+    GEPPETTO_MODEL_LOADED = 'geppetto_model_loaded'
+
+
 # GATEWAY MESSAGES
 
 
