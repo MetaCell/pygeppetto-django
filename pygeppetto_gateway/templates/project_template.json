@@ -7,18 +7,22 @@
          "id":1,
          "name":"${project_name}",
          "status":"DESIGN",
-         "creationDate":"${date}",
-         "lastModified":"${date}",
          "aspectConfigurations":[
             {
                "id":1,
-               "instance":"",
+               "instance":"${instance}",
                "simulatorConfiguration":{
                   "id":1,
-                  "simulatorId":"geppetto_scidash",
-                  "timestep":0.000025,
-                  "length":0.3
-               }
+                  "simulatorId":"scidashSimulator",
+                  "conversionServiceId": "lemsConversion",
+                  "timestep":0.00005,
+                  "length":0.3,
+                  "parameters": {
+                    "target": "${target}",
+                    "scoreID": "${score_id}"
+                  },
+                  "watchedVariables": ${watched_variables}
+                }
             }
          ]
       }

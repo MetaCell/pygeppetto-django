@@ -1,14 +1,26 @@
 # GEPPETTO SERVLET MESSAGES
 
+
 class Servlet:
 
     LOAD_PROJECT_FROM_URL = 'load_project_from_url'
+    RUN_EXPERIMENT = 'run_experiment'
+    CLIENT_ID = 'client_id'
+    PING = 'ping'
+
+
+class ServletResponse:
+
+    PROJECT_LOADED = 'project_loaded'
+    GEPPETTO_MODEL_LOADED = 'geppetto_model_loaded'
+
 
 # GATEWAY MESSAGES
 
+
 class Income:
 
-    SCIDASH_LOAD_MODEL = 'scidash_load_model'
+    LOAD_MODEL = 'load_model'
 
 
 class Outcome:
@@ -26,10 +38,7 @@ class PygeppettoDjangoError():
     message = None
 
     def __init__(self):
-        return {
-                'code': self.code,
-                'message': self.message
-                }
+        return {'code': self.code, 'message': self.message}
 
 
 class UknownActionError(PygeppettoDjangoError):

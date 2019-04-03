@@ -1,1 +1,5 @@
-from pygeppetto_gateway.base import GeppettoServletManager
+from pygeppetto_gateway.base import (
+    GeppettoProjectBuilder, GeppettoServletManager
+)
+
+import pygeppetto_gateway.helpers
