@@ -4,6 +4,7 @@ import os
 import pathlib
 import re
 from string import Template
+import zlib
 
 import requests
 from django.conf import settings
@@ -83,6 +84,11 @@ class GeppettoServletManager():
     def read(self) -> str:
         result = self.ws.recv()
 
+        if isinstance(result, bytes):
+            result_bytes = bytearray(result)[1:]
+
+            result = zlib.decompress(result_bytes, 15+32)
+
         return result
 
 
@@ -159,9 +165,9 @@ class GeppettoProjectBuilder():
         )
 
         if self._no_score:
-            self._watched_variables = options.get(
+            self._watched_variables = json.dumps(options.get(
                 'watched_variables', []
-            )
+            ))
         else:
             self._watched_variables = json.dumps(
                 self._score.model_instance.run_params.get('stateVariables', [])
@@ -229,6 +235,11 @@ class GeppettoProjectBuilder():
                 '<network id="(\w*)\"', self._nml_file_content
             )
         else:
+            result = re.search(
+                '<cell id="(\w*)\"', self._nml_file_content
+            )
+
+        if result is None:
             result = re.search(
                 '<Target component="(\w*)\"', self._nml_file_content
             )
