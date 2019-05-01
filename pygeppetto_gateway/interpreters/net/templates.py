@@ -16,7 +16,7 @@ MODEL = '''<?xml version="1.0" encoding="ASCII"?>
         <types xsi:type="gep_1:ImportType"
             id="{target}"
             url="{url}"
-            modelInterpreterId="lemsModelInterpreter" />
+            modelInterpreterId="neuroMLModelInterpreter" />
     </libraries>
 </gep:GeppettoModel>'''
 
@@ -55,3 +55,5 @@ PROJECT = '''{{
         "type":"GEPPETTO_PROJECT"
     }}
 }}'''
+
+

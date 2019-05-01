@@ -22,23 +22,20 @@ class BaseModelInterpreter():
     project_template: str = None
     model_template: str = None
 
-    def __init__(self, model_file_url: str, watched_variables: t.List[str]):
-
+    def __init__(self, model_file_url: str):
         self.model_file_url = model_file_url
-        self.watched_variables = watched_variables
-
         self.model_file_content = self.__get_model_content(self.model_file_url)
 
-    @lru_cache(maxsize=64)
+    @lru_cache(maxsize=8)
     def __get_model_content(self, url: str) -> str:
         model_request = requests.get(self.model_file_url)
 
-        if model_request.status_code != 404:
-            self.model_file_content = model_request.text
-        else:
+        if model_request.status_code == 404:
             raise InterpreterException(
                 f'Model not found by url {self.model_file_url}'
             )
+
+        return model_request.text
 
     def extract_target(self) -> str:
         logger.info(f'Extracting target for {self.model_file_url}')
@@ -69,6 +66,4 @@ class BaseModelInterpreter():
         return self.model_template
 
     def extract_instance(self) -> str:
-        raise NotImplementedError(
-            "Interpreter should implement extract_instance method"
-        )
+        return self.extract_target()

@@ -3,19 +3,23 @@ import logging
 import os
 import pathlib
 import zlib
+import typing as t
 
 import requests
 from pygeppetto_gateway.interpreters import core
 from django.conf import settings
-from enforce import runtime_validation
+import enforce
 from websocket import create_connection
 
 from pygeppetto_gateway import helpers
 
 db_logger = logging.getLogger('db')
+enforce.config({
+    'mode': 'covariant'
+})
 
 
-@runtime_validation
+@enforce.runtime_validation
 class GeppettoServletManager():
     """ Base class for communication with Java Geppetto server """
 
@@ -51,7 +55,7 @@ class GeppettoServletManager():
             ]
         )
 
-    def _send(self, payload: dict) -> str:
+    def _send(self, payload: str) -> None:
         """_send
 
         sending data in payload to websocket
@@ -67,7 +71,9 @@ class GeppettoServletManager():
 
         self.ws.send(payload)
 
-    def handle(self, _type: str, data: dict, request_id="pg-request"):
+    def handle(
+        self, _type: str, data: t.Union[dict, str], request_id="pg-request"
+    ):
         payload = json.dumps(
             {
                 'requestID': request_id,
@@ -88,11 +94,14 @@ class GeppettoServletManager():
         if isinstance(result, bytes):
             result_bytes = bytearray(result)[1:]
 
-            result = zlib.decompress(result_bytes, 15 + 32)
+            result = zlib.decompress(result_bytes, 15 + 32).decode()
 
         return result
 
 
+# TODO: convert this class to
+# TODO: GeppettoManager, move all building functionality to interpreters
+@enforce.runtime_validation
 class GeppettoProjectBuilder():
     def __init__(
         self,
@@ -137,12 +146,12 @@ class GeppettoProjectBuilder():
         )
 
         self.model_file_location = options.get(
-            'model_file_location', '/tmp/nml_model.nml'
+            'model_file_location', '/tmp/model.nml'
         )
 
         for _dir in [
             'built_xmi_location', 'built_project_location',
-            'downloaded_nml_location'
+            'model_file_location'
         ]:
             self.create_dir_if_not_exists(getattr(self, _dir))
 
@@ -162,8 +171,8 @@ class GeppettoProjectBuilder():
                 )
             )
 
-        self.timestep = options.get('timestep', 0.00005)
-        self.duration = options.get('duration', 0.3)
+        self.timestep = options.get('timestep', 0.00025)
+        self.duration = options.get('duration', 0.800025)
         self.project_name = options.get('project_name', 'defaultProject')
 
     def get_file_path_tail(self, path):
@@ -239,8 +248,8 @@ class GeppettoProjectBuilder():
             project.write(
                 self.project_template.format(
                     project_name=self.project_name,
-                    instance=self.interpreter.get_instance(),
-                    target=self.interpreter.get_target(),
+                    instance=self.interpreter.extract_instance(),
+                    target=self.interpreter.extract_target(),
                     watched_variables=self.watched_variables,
                     url=self.build_url(self.built_xmi_location),
                     score_id="NULL" if self.no_score else self.score.pk
