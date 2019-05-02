@@ -2,19 +2,24 @@ import json
 import logging
 import os
 import pathlib
-import re
-from string import Template
 import zlib
+import typing as t
 
 import requests
+from pygeppetto_gateway.interpreters import core
 from django.conf import settings
+import enforce
 from websocket import create_connection
 
 from pygeppetto_gateway import helpers
 
-LOGGER = logging.getLogger(__name__)
+db_logger = logging.getLogger('db')
+enforce.config({
+    'mode': 'covariant'
+})
 
 
+@enforce.runtime_validation
 class GeppettoServletManager():
     """ Base class for communication with Java Geppetto server """
 
@@ -30,6 +35,8 @@ class GeppettoServletManager():
         else:
             self.host = self.DEFAULT_HOST
 
+        db_logger.info(f"Servlet manager init with {self.host} GEPPETTO url")
+
         self._say_hello_geppetto()
 
     def _say_hello_geppetto(self) -> None:
@@ -37,8 +44,6 @@ class GeppettoServletManager():
 
         Here we have to do a GET request to base Geppetto page, and then put
         session cookies into websocket connection, or it will not work.
-
-        :rtype: None
         """
 
         http_response = requests.get(settings.GEPPETTO_BASE_URL)
@@ -50,14 +55,10 @@ class GeppettoServletManager():
             ]
         )
 
-    def _send(self, payload: dict) -> str:
+    def _send(self, payload: str) -> None:
         """_send
 
         sending data in payload to websocket
-
-        :param payload:
-        :type payload: dict
-        :rtype: str
         """
 
         if self.cookies is None:
@@ -70,13 +71,19 @@ class GeppettoServletManager():
 
         self.ws.send(payload)
 
-    def handle(self, _type: str, data: dict, request_id="pg-request"):
+    def handle(
+        self, _type: str, data: t.Union[dict, str], request_id="pg-request"
+    ):
         payload = json.dumps(
             {
                 'requestID': request_id,
                 'type': _type,
                 'data': data
             }
+        )
+
+        db_logger.info(
+            f"Sending '{_type}' request to GEPPETTO. Payload {payload}"
         )
 
         self._send(payload)
@@ -87,99 +94,88 @@ class GeppettoServletManager():
         if isinstance(result, bytes):
             result_bytes = bytearray(result)[1:]
 
-            result = zlib.decompress(result_bytes, 15+32)
+            result = zlib.decompress(result_bytes, 15 + 32).decode()
 
         return result
 
 
+# TODO: convert this class to
+# TODO: GeppettoManager, move all building functionality to interpreters
+@enforce.runtime_validation
 class GeppettoProjectBuilder():
-    def __init__(self, score=None, model_url=None, **options: dict) -> None:
+    def __init__(
+        self,
+        interpreter: core.BaseModelInterpreter,
+        score=None,
+        model_file_url: str = None,
+        **options: dict
+    ) -> None:
         """__init__
 
-        :param model_url: url or :param score: ScoreInstance required
-
-        :param **options: not required
+        :**options: not required
             project_location: location where project file will be saved
                 after replacing all values
-            nml_location: location where nml file will be saved
+            model_file_location: location where nml file will be saved
                 after downloading
             watched_variables: list of variables, extracted from model
             timestep: timestep, as you see
-            length: I don't know what is this to be honest
+            length: time model will be simulating
             project_name: obviously a project name
         """
-        current_dir = os.path.dirname(os.path.realpath(__file__))
-        self._no_score = score is None
 
-        if not self._no_score:
-            self._score = score
+        self.no_score = score is None
 
-        self._target = ""
-
-        self._nml_url = model_url if self._no_score else self._score.model_instance.url  # noqa: E501
-
-        self._extract_format()
-
-        if self._model_format == 'net':
-            xmi_template_path = os.path.join(
-                current_dir, 'templates/model_template.xmi'
-            )
+        if not self.no_score:
+            self.score = score
         else:
-            xmi_template_path = os.path.join(
-                current_dir, 'templates/model_template_cell.xmi'
+            db_logger.info(
+                f'Score is not presented, working with url {model_file_url}'
             )
+        self.model_file_url = model_file_url if self.no_score else self.score.model_instance.url  # noqa: E501
+        self.interpreter = interpreter(self.model_file_url)
+        self.xmi_template = self.interpreter.get_model_template()
+        self.project_template = self.interpreter.get_project_template()
+        self.model_name = options.get('model_name', 'defaultModel')
 
-        project_template_path = os.path.join(
-            current_dir, 'templates/project_template.json'
-        )
-
-        with open(xmi_template_path, 'r') as t:
-            self.xmi_template = t.read()
-
-        with open(project_template_path, 'r') as t:
-            self.project_template = t.read()
-
-        self._model_name = options.get('model_name', 'defaultModel')
-
-        self._built_xmi_location = options.get(
+        self.built_xmi_location = options.get(
             'xmi_location', '/tmp/model.xmi'
         )
 
-        self._built_project_location = options.get(
+        self.built_project_location = options.get(
             'project_location', '/tmp/project.json'
         )
 
-        self._downloaded_nml_location = options.get(
-            'nml_location', '/tmp/nml_model.nml'
+        self.model_file_location = options.get(
+            'model_file_location', '/tmp/model.nml'
         )
 
         for _dir in [
-            '_built_xmi_location', '_built_project_location',
-            '_downloaded_nml_location'
+            'built_xmi_location', 'built_project_location',
+            'model_file_location'
         ]:
-            self._create_dir_if_not_exists(getattr(self, _dir))
+            self.create_dir_if_not_exists(getattr(self, _dir))
 
-        self._base_project_files_host = getattr(
+        self.base_project_files_host = getattr(
             settings, 'BASE_PROJECT_FILES_HOST',
             'http://localhost:8000/static/projects/'
         )
 
-        if self._no_score:
-            self._watched_variables = json.dumps(options.get(
-                'watched_variables', []
-            ))
+        if self.no_score:
+            self.watched_variables = json.dumps(
+                options.get('watched_variables', [])
+            )
         else:
-            self._watched_variables = json.dumps(
-                self._score.model_instance.run_params.get('stateVariables', [])
+            self.watched_variables = json.dumps(
+                self.score.model_instance.run_params.get(
+                    'watchedVariables', []
+                )
             )
 
-        self._timestep = options.get('timestep', 0.00005)
+        self.timestep = options.get('timestep', 0.00025)
+        self.duration = options.get('duration', 0.800025)
+        self.project_name = options.get('project_name', 'defaultProject')
 
-        self.duration = options.get('duration', 0.3)
-
-        self._project_name = options.get('project_name', 'defaultProject')
-
-    def _get_file_path_tail(self, path):
+    def get_file_path_tail(self, path):
         base_dir = getattr(settings, 'BASE_DIR', None)
 
         if base_dir is None:
@@ -189,84 +185,55 @@ class GeppettoProjectBuilder():
 
         base_project_files_dir = os.path.join(base_dir, 'static', 'projects')
 
-        return path.replace('{}/'.format(base_project_files_dir), '')
+        return path.replace(f'{base_project_files_dir}/', '')
 
-    def _create_dir_if_not_exists(self, path):
+    def create_dir_if_not_exists(self, path):
         dir_path = pathlib.Path(pathlib.Path(path).parents[0])
 
         if not dir_path.is_dir():
             dir_path.mkdir(parents=True, exist_ok=True)
 
     def build_url(self, path):
-        return '{}{}'.format(
-            self._base_project_files_host, self._get_file_path_tail(path)
-        )
+        return f'{self.base_project_files_host}{self.get_file_path_tail(path)}'
 
-    def donwload_nml(self) -> str:
-        """donwload_nml
+    def write_model_to_file(self) -> str:
+        """write_model_to_file
 
-        Downloads NML file from `self._nml_url`,
-            saves it to `self._downloaded_nml_location`
-
-        :return: path to nml
-        :rtype: str
+        Writes model file from `self.model_file_url`,
+            saves it to `self.downloaded_nml_location`
         """
 
-        self._nml_file_content = requests.get(self._nml_url).text
+        model_file_content = self.interpreter.get_model_file_content()
 
-        with open(self._downloaded_nml_location, 'w') as nml:
-            nml.write(self._nml_file_content)
+        db_logger.info(f"Writing {self.model_file_url}")
 
-        file_name = os.path.basename(self._downloaded_nml_location)
-        project_dir = self._downloaded_nml_location.replace(file_name, '')
+        with open(self.model_file_location, 'w') as model:
+            model.write(model_file_content)
 
-        helpers.process_includes(self._nml_url, project_dir)
-        self._extract_target()
+        file_name = os.path.basename(self.model_file_location)
+        project_dir = self.model_file_location.replace(file_name, '')
 
-        return self._downloaded_nml_location
+        helpers.process_includes(self.model_file_url, project_dir)
 
-    def _extract_format(self):
-        file_name = os.path.basename(self._nml_url)
-        self._model_format = file_name.split(".")[-2]
-
-    def _extract_target(self):
-        if self._model_format == 'net':
-            result = re.search(
-                '<network id="(\w*)\"', self._nml_file_content
-            )
-        else:
-            result = re.search(
-                '<cell id="(\w*)\"', self._nml_file_content
-            )
-
-        if result is None:
-            result = re.search(
-                '<Target component="(\w*)\"', self._nml_file_content
-            )
-
-        if result is not None:
-            self._target = result.group(1)
+        return self.model_file_location
 
     def build_xmi(self) -> str:
         """build_xmi
 
         Builds xmi Geppetto model file from downloaded nml, saves to
         `self._built_xmi_location`
-
-        :return: path to xmi
-        :rtype: str
         """
 
-        with open(self._built_xmi_location, 'w') as xt:
+        with open(self.built_xmi_location, 'w') as xt:
             xt.write(
                 self.xmi_template.format(
-                    name=self._model_name,
-                    target=self._target,
-                    url=self.build_url(self._downloaded_nml_location)
+                    name=self.model_name,
+                    target=self.interpreter.extract_target(),
+                    url=self.build_url(self.model_file_location)
                 )
             )
 
-        return self.build_url(self._built_xmi_location)
+        return self.build_url(self.built_xmi_location)
 
     def build_project(self) -> str:
         """build_project
@@ -274,19 +241,19 @@ class GeppettoProjectBuilder():
 
         """
 
-        self.donwload_nml()
+        self.write_model_to_file()
         self.build_xmi()
 
-        with open(self._built_project_location, 'w+') as project:
+        with open(self.built_project_location, 'w+') as project:
             project.write(
-                Template(self.project_template).substitute(
-                    project_name=self._project_name,
-                    instance=self._model_name,
-                    target=self._target,
-                    watched_variables=self._watched_variables,
-                    url=self.build_url(self._built_xmi_location),
-                    score_id="NULL" if self._no_score else self._score.pk
+                self.project_template.format(
+                    project_name=self.project_name,
+                    instance=self.interpreter.extract_instance(),
+                    target=self.interpreter.extract_target(),
+                    watched_variables=self.watched_variables,
+                    url=self.build_url(self.built_xmi_location),
+                    score_id="NULL" if self.no_score else self.score.pk
                 )
             )
 
-        return self.build_url(self._built_project_location)
+        return self.build_url(self.built_project_location)

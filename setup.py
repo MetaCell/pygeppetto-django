@@ -34,9 +34,7 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
     install_requires=[
-        'channels==2.1.2',
-        'Django==1.11.17',
-        'websocket-client==0.48.0',
-        'requests==2.19.1'
+        'channels==2.1.2', 'Django==1.11.7', 'websocket-client==0.48.0',
+        'requests==2.19.1', 'enforce==0.3.4'
     ]
 )
