@@ -1,4 +1,5 @@
 import json
+import copy
 import logging
 import os
 import pathlib
@@ -10,8 +11,11 @@ from pygeppetto_gateway.interpreters import core
 from django.conf import settings
 import enforce
 from websocket import create_connection
+import quantities as pq
 
 from pygeppetto_gateway import helpers
+from scidash.general import helpers as general_hlp
+from scidash.general.backends import ScidashCacheBackend
 
 db_logger = logging.getLogger('db')
 enforce.config({
@@ -175,7 +179,87 @@ class GeppettoProjectBuilder():
         self.duration = options.get('duration', 0.800025)
         self.project_name = options.get('project_name', 'defaultProject')
 
-    def get_file_path_tail(self, path):
+    def setup_protocol(self, score_instance) -> None:
+        model_class = general_hlp.import_class(
+            score_instance.model_instance.model_class.import_path
+        )
+        model_instance = model_class(
+            self.model_file_location, backend=ScidashCacheBackend.name
+        )
+        test_class = general_hlp.import_class(
+            score_instance.test_instance.test_class.import_path
+        )
+
+        observation = copy.deepcopy(score_instance.test_instance.observation)
+        params = copy.deepcopy(score_instance.test_instance.params)
+
+        try:
+            destructured = json.loads(
+                score_instance.test_instance.test_class.units
+            )
+        except json.JSONDecodeError:
+            units = general_hlp.import_class(
+                score_instance.test_instance.test_class.units
+            )
+        else:
+            if destructured.get('name', False):
+                base_unit = general_hlp.import_class(
+                    destructured.get('base').get('quantity')
+                )
+                units = pq.UnitQuantity(
+                    destructured.get('name'),
+                    base_unit * destructured.get('base').get('coefficient'),
+                    destructured.get('symbol')
+                )
+            else:
+                units = destructured
+
+        for key in observation:
+            if isinstance(units, dict):
+                observation[key] = int(observation[key]
+                                       ) * units[key] if key != 'n' else int(
+                                           observation[key]
+                                       )
+            else:
+                observation[key] = int(observation[key]
+                                       ) * units if key != 'n' else int(
+                                           observation[key]
+                                       )
+
+        params_units = score_instance.test_instance.test_class.params_units
+
+        for key in params_units:
+            params_units[key] = general_hlp.import_class(params_units[key])
+
+        processed_params = {}
+
+        for key in params:
+            if params[key] is not None:
+                processed_params[key] = float(params[key]) * params_units[key]
+
+        test_instance = test_class(observation=observation, **processed_params)
+
+        test_instance.setup_protocol(model_instance)
+
+        nml_paths = model_instance.get_nml_paths()
+
+        project_files_dir = self.model_file_location.replace(
+            os.path.basename(self.model_file_location), ''
+        )
+
+        for path in nml_paths:
+            db_logger.info(f"Rewriting model file {path}")
+
+            with open(path, 'r') as f:
+                file_name = os.path.basename(path)
+                model_file_content = f.read()
+
+                file_path = os.path.join(project_files_dir, file_name)
+
+                with open(file_path, 'w+') as nf:
+                    nf.write(model_file_content)
+
+    def get_file_path_tail(self, path: str):
         base_dir = getattr(settings, 'BASE_DIR', None)
 
         if base_dir is None:
@@ -187,13 +271,13 @@ class GeppettoProjectBuilder():
 
         return path.replace(f'{base_project_files_dir}/', '')
 
-    def create_dir_if_not_exists(self, path):
+    def create_dir_if_not_exists(self, path: str):
         dir_path = pathlib.Path(pathlib.Path(path).parents[0])
 
         if not dir_path.is_dir():
             dir_path.mkdir(parents=True, exist_ok=True)
 
-    def build_url(self, path):
+    def build_url(self, path: str):
         return f'{self.base_project_files_host}{self.get_file_path_tail(path)}'
 
     def write_model_to_file(self) -> str:
@@ -214,6 +298,9 @@ class GeppettoProjectBuilder():
         project_dir = self.model_file_location.replace(file_name, '')
 
         helpers.process_includes(self.model_file_url, project_dir)
+
+        if not self.no_score:
+            self.setup_protocol(self.score)
 
         return self.model_file_location
 
