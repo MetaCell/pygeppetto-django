@@ -13,6 +13,11 @@ class ServletResponse:
 
     PROJECT_LOADED = 'project_loaded'
     GEPPETTO_MODEL_LOADED = 'geppetto_model_loaded'
+    EXPERIMENT_LOADED = 'experiment_loaded'
+
+    ERROR_RUNNING_EXPERIMENT = 'error_running_experiment'
+    GENERIC_ERROR = 'generic_error'
+    ERROR_LOADING_PROJECT = 'error_loading_project'
 
 
 # GATEWAY MESSAGES
