@@ -10,7 +10,7 @@ import requests
 from pygeppetto_gateway.interpreters import core
 from django.conf import settings
 import enforce
-from websocket import create_connection
+import websocket
 import quantities as pq
 
 from pygeppetto_gateway import helpers
@@ -42,6 +42,20 @@ class GeppettoServletManager():
         db_logger.info(f"Servlet manager init with {self.host} GEPPETTO url")
 
         self._say_hello_geppetto()
+        self._connect()
+
+    def _connect(self) -> websocket.WebSocket:
+        self.ws = websocket.WebSocket()
+        self.ws.timeout = 120
+
+        self.ws.connect(self.host, cookie=self.cookies)
+
+        return self.ws
+
+    def close(self) -> None:
+        db_logger.info("Connection closed")
+
+        self.ws.close()
 
     def _say_hello_geppetto(self) -> None:
         """_say_hello_geppetto
@@ -70,8 +84,6 @@ class GeppettoServletManager():
                 "You forgot to say hello to geppetto"
                 "(self._say_hello_geppetto())"
             )
-
-        self.ws = create_connection(self.host, cookie=self.cookies)
 
         self.ws.send(payload)
 
