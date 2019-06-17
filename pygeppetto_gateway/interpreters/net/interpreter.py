@@ -7,4 +7,3 @@ class NetInterpreter(core.BaseModelInterpreter):
     target_pattern = '<network id="(.*)"'
     project_template = templates.PROJECT
     model_template = templates.MODEL
-

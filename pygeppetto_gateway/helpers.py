@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import typing as t
 
 import requests
 from django.conf import settings as s
@@ -8,7 +9,7 @@ from django.conf import settings as s
 db_logger = logging.getLogger('db')
 
 
-def process_includes(model_file_url: str, dir_path: str = None):
+def process_includes(model_file_url: t.Union[str, dict], dir_path: str = None):
     """ Downloading all included models in model file
         :type model_file_url:
         :param model_file_url:
@@ -20,6 +21,9 @@ def process_includes(model_file_url: str, dir_path: str = None):
 
         :rtype:
     """
+    if isinstance(model_file_url, dict):
+        return
+
     regex = {'lems': '<Include file="(.*)"', 'nml': '<include href="(.*)"'}
     file_content = requests.get(model_file_url).text
 
