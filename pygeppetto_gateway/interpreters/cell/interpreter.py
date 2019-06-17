@@ -7,4 +7,3 @@ class CellInterpreter(core.BaseModelInterpreter):
     target_pattern = '<cell id="(.*)"'
     project_template = templates.PROJECT
     model_template = templates.MODEL
-

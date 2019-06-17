@@ -1,26 +1,25 @@
-import json
 import copy
+import json
 import logging
 import os
 import pathlib
-import zlib
 import typing as t
+import zlib
 
-import requests
-from pygeppetto_gateway.interpreters import core
-from django.conf import settings
 import enforce
-import websocket
 import quantities as pq
+import requests
+import websocket
+import numpy as np
+from django.conf import settings
 
 from pygeppetto_gateway import helpers
+from pygeppetto_gateway.interpreters import core
 from scidash.general import helpers as general_hlp
 from scidash.general.backends import ScidashCacheBackend
 
 db_logger = logging.getLogger('db')
-enforce.config({
-    'mode': 'covariant'
-})
+enforce.config({'mode': 'covariant'})
 
 
 @enforce.runtime_validation
@@ -123,7 +122,7 @@ class GeppettoProjectBuilder():
         self,
         interpreter: core.BaseModelInterpreter,
         score=None,
-        model_file_url: str = None,
+        model_file_url: t.Union[str, dict] = None,
         **options: dict
     ) -> None:
         """__init__
@@ -153,9 +152,7 @@ class GeppettoProjectBuilder():
         self.project_template = self.interpreter.get_project_template()
         self.model_name = options.get('model_name', 'defaultModel')
 
-        self.built_xmi_location = options.get(
-            'xmi_location', '/tmp/model.xmi'
-        )
+        self.built_xmi_location = options.get('xmi_location', '/tmp/model.xmi')
 
         self.built_project_location = options.get(
             'project_location', '/tmp/project.json'
@@ -228,15 +225,27 @@ class GeppettoProjectBuilder():
 
         for key in observation:
             if isinstance(units, dict):
-                observation[key] = int(observation[key]
-                                       ) * units[key] if key != 'n' else int(
-                                           observation[key]
-                                       )
+                try:
+                    parsed_observation = json.loads(observation[key])
+                    np_observation = np.array(parsed_observation
+                                              ) * general_hlp.import_class(
+                                                  units[key]
+                                              )
+                    observation[key] = np_observation
+                except json.JSONDecodeError:
+                    observation[key] = int(
+                        observation[key]
+                    ) * units[key] if key != 'n' else int(observation[key])
             else:
-                observation[key] = int(observation[key]
-                                       ) * units if key != 'n' else int(
-                                           observation[key]
-                                       )
+                try:
+                    parsed_observation = json.loads(observation[key])
+                    np_observation = np.array(parsed_observation) * units
+                    observation[key] = np_observation
+                except json.JSONDecodeError:
+                    observation[key] = int(observation[key]
+                                           ) * units if key != 'n' else int(
+                                               observation[key]
+                                           )
 
         params_units = score_instance.test_instance.test_class.params_units
 
@@ -249,7 +258,7 @@ class GeppettoProjectBuilder():
             if params[key] is not None:
                 processed_params[key] = float(params[key]) * params_units[key]
 
-        test_instance = test_class(observation=observation, **processed_params)
+        test_instance = test_class(observation=observation)
 
         test_instance.setup_protocol(model_instance)
 

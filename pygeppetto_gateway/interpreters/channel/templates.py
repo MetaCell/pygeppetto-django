@@ -55,4 +55,3 @@ PROJECT = '''{{
         "type":"GEPPETTO_PROJECT"
     }}
 }}'''
-
