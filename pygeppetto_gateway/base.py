@@ -31,6 +31,15 @@ class GeppettoServletManager():
     cookies = None
     ws = None
 
+    instance = None
+
+    @classmethod
+    def get_instance(cls):
+        if cls.instance is None:
+            cls.instance = GeppettoServletManager()
+
+        return cls.instance
+
     def __init__(self) -> None:
 
         if hasattr(settings, 'GEPPETTO_SERVLET_URL'):
