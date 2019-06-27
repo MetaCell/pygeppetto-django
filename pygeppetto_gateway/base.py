@@ -31,14 +31,14 @@ class GeppettoServletManager():
     cookies = None
     ws = None
 
-    instance = None
+    instances = {}
 
     @classmethod
-    def get_instance(cls):
-        if cls.instance is None:
-            cls.instance = GeppettoServletManager()
+    def get_instance(cls, instance_name):
+        if cls.instances.get(instance_name, None) is None:
+            cls.instances[instance_name] = GeppettoServletManager()
 
-        return cls.instance
+        return cls.instances.get(instance_name)
 
     def __init__(self) -> None:
 
