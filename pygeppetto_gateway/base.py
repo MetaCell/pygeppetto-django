@@ -14,7 +14,7 @@ import numpy as np
 from django.conf import settings
 
 from pygeppetto_gateway import helpers
-from pygeppetto_gateway.interpreters import core
+from pygeppetto_gateway.interpreters import core, helpers as pgi_helpers
 from scidash.general import helpers as general_hlp
 from scidash.general.backends import ScidashCacheBackend
 
@@ -197,7 +197,7 @@ class GeppettoProjectBuilder():
         self.duration = options.get('duration', 0.800025)
         self.project_name = options.get('project_name', 'defaultProject')
 
-    def setup_protocol(self, score_instance) -> None:
+    def setup_protocol(self, score_instance) -> str:
         model_class = general_hlp.import_class(
             score_instance.model_instance.model_class.import_path
         )
@@ -289,6 +289,33 @@ class GeppettoProjectBuilder():
                 with open(file_path, 'w+') as nf:
                     nf.write(model_file_content)
 
+        # embarassing
+        lems_file_path = model_instance.lems_file_path
+
+        with open(lems_file_path, 'r') as lf:
+            content = lf.read()
+
+            with open(
+                        os.path.join(project_files_dir, os.path.basename(
+                            lems_file_path
+                        )), 'w+'
+                    ) as nlf:
+                nlf.write(content)
+
+            self.interpreter = general_hlp.import_class(
+                pgi_helpers.interpreter_detector(
+                    os.path.basename(lems_file_path)
+                )
+            )
+
+            model_file_location = os.path.join(
+                project_files_dir, os.path.basename(lems_file_path)
+            )
+
+            self.interpreter = self.interpreter(model_file_location)
+
+        return model_file_location
+
     def get_file_path_tail(self, path: str):
         base_dir = getattr(settings, 'BASE_DIR', None)
 
@@ -330,7 +357,7 @@ class GeppettoProjectBuilder():
         helpers.process_includes(self.model_file_url, project_dir)
 
         if not self.no_score:
-            self.setup_protocol(self.score)
+            self.model_file_location = self.setup_protocol(self.score)
 
         return self.model_file_location
 

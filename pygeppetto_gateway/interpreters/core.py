@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 import typing as t
 from functools import lru_cache
@@ -49,14 +50,18 @@ class BaseModelInterpreter():
         url = processor.get_file_url()
 
         if not isinstance(url, dict):
-            model_request = requests.get(self.model_file_url)
+            if not os.path.isfile(url):
+                model_request = requests.get(self.model_file_url)
 
-            if model_request.status_code == 404:
-                raise InterpreterException(
-                    f'Model not found by url {self.model_file_url}'
-                )
+                if model_request.status_code == 404:
+                    raise InterpreterException(
+                        f'Model not found by url {self.model_file_url}'
+                    )
 
-            return model_request.text
+                return model_request.text
+            else:
+                with open(url, 'r') as f:
+                    return f.read()
         else:
             extractor = NeuroMLDbExtractor(
                 url, processor.model_id, settings.DOWNLOADED_MODEL_DIR
