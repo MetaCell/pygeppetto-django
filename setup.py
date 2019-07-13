@@ -1,4 +1,5 @@
 import os
+
 from setuptools import find_packages, setup
 
 with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
@@ -33,9 +34,7 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
     install_requires=[
-        'channels==1.1.8',
-        'asgi-redis==1.4.3',
-        'Django==1.9',
-        'djangorestframework==3.7.1'
+        'channels==2.1.2', 'Django==1.11.7', 'websocket-client==0.48.0',
+        'requests==2.19.1', 'enforce==0.3.4', 'quantities==0.12.1'
     ]
 )
