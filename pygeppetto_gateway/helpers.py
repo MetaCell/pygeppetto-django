@@ -5,11 +5,14 @@ import typing as t
 
 import requests
 from django.conf import settings as s
+from distutils.dir_util import copy_tree
 
 db_logger = logging.getLogger('db')
 
 
-def process_includes(model_file_url: t.Union[str, dict], dir_path: str = None):
+def process_includes(
+    model_file_url: t.Union[str, dict], dir_path: str = None, interpreter = None
+    ):
     """ Downloading all included models in model file
         :type model_file_url:
         :param model_file_url:
@@ -21,8 +24,15 @@ def process_includes(model_file_url: t.Union[str, dict], dir_path: str = None):
 
         :rtype:
     """
+    model_directory = s.DOWNLOADED_MODEL_DIR if dir_path is None else dir_path
     if isinstance(model_file_url, dict):
-        return
+        if interpreter is None:
+            return
+        else:
+            model_folder = interpreter.extractor.model_folder_path
+            copy_tree(model_folder, model_directory)
+
+            return
 
     regex = {'lems': '<Include file="(.*)"', 'nml': '<include href="(.*)"'}
     file_content = requests.get(model_file_url).text

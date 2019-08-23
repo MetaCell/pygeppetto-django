@@ -354,7 +354,9 @@ class GeppettoProjectBuilder():
         file_name = os.path.basename(self.model_file_location)
         project_dir = self.model_file_location.replace(file_name, '')
 
-        helpers.process_includes(self.model_file_url, project_dir)
+        helpers.process_includes(
+            self.model_file_url, project_dir, self.interpreter
+        )
 
         if not self.no_score:
             self.model_file_location = self.setup_protocol(self.score)
