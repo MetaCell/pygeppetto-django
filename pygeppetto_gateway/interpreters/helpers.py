@@ -125,6 +125,7 @@ class NeuroMLDbExtractor():
             raise NeuroMLDbExtractorException('Extract path should be a dir')
 
         self.model_path = None
+        self.model_folder_path = None
         self.model_zip_path = None
         self.root_file = None
         self.url = None
@@ -165,7 +166,9 @@ class NeuroMLDbExtractor():
         with open(self.model_zip_path, 'wb') as f:
             f.write(response.content)
 
-        self.model_path = os.path.join(self.extract_path, f'{self.model_id}')
+        self.model_path = self.model_folder_path = os.path.join(
+            self.extract_path, f'{self.model_id}'
+        )
 
     def extract(self):
         zip_ref = zipfile.ZipFile(self.model_zip_path, 'r')

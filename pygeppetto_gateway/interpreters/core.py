@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 import typing as t
 from functools import lru_cache
@@ -23,10 +24,10 @@ class hashabledict(dict):
 class BaseModelInterpreter():
     """ Base class for all interpreters """
 
-    include_pattern: str = None
-    target_pattern: str = None
-    project_template: str = None
-    model_template: str = None
+    include_pattern: str = ''
+    target_pattern: str = ''
+    project_template: str = ''
+    model_template: str = ''
 
     def __init__(self, model_file_url: t.Union[str, dict]):
         self.model_file_url = model_file_url
@@ -49,20 +50,24 @@ class BaseModelInterpreter():
         url = processor.get_file_url()
 
         if not isinstance(url, dict):
-            model_request = requests.get(self.model_file_url)
+            if not os.path.isfile(url):
+                model_request = requests.get(self.model_file_url)
 
-            if model_request.status_code == 404:
-                raise InterpreterException(
-                    f'Model not found by url {self.model_file_url}'
-                )
+                if model_request.status_code == 404:
+                    raise InterpreterException(
+                        f'Model not found by url {self.model_file_url}'
+                    )
 
-            return model_request.text
+                return model_request.text
+            else:
+                with open(url, 'r') as f:
+                    return f.read()
         else:
-            extractor = NeuroMLDbExtractor(
+            self.extractor = NeuroMLDbExtractor(
                 url, processor.model_id, settings.DOWNLOADED_MODEL_DIR
             )
 
-            with open(extractor.model_path, 'r') as f:
+            with open(self.extractor.model_path, 'r') as f:
                 result = f.read()
 
             return result
