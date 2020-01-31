@@ -5,7 +5,7 @@ from pygeppetto_server import views
 
 urlpatterns = [
     url(
-        r'^org.geppetto.frontend/geppetto/(?P<path>.*)$',
+        r'^geppetto/(?P<path>.*)$',
         RedirectView.as_view(
             url='/static/org.geppetto.frontend/src/main/webapp/%(path)s'
         )
