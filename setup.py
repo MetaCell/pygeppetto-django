@@ -22,7 +22,7 @@ setup(
     classifiers=[
         'Environment :: Web Environment',
         'Framework :: Django',
-        'Framework :: Django :: 1.9',
+        'Framework :: Django :: 1.11',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
@@ -34,7 +34,7 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
     install_requires=[
-        'channels==2.3.1', 'Django==1.11.29', 'websocket-client==0.48.0',
-        'requests==2.19.1', 'enforce==0.3.4', 'quantities==0.12.1'
+        'channels==2.3.1', 'Django==1.11.29', 'websocket-client==1.0.1',
+        'requests==2.25.1', 'enforce==0.3.4', 'quantities==0.12.4'
     ]
 )
